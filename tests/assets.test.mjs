@@ -3,7 +3,7 @@ import {readFileSync,existsSync} from 'node:fs';
 import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../dist');
-const html=readFileSync(resolve(root,'index.html'),'utf8'),script=readFileSync(resolve(root,'game.js'),'utf8');
+const html=readFileSync(resolve(root,'play.html'),'utf8'),script=readFileSync(resolve(root,'game.js'),'utf8');
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length,'HTML IDs must be unique');
 for(const m of script.matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.includes(m[1]),'missing control: '+m[1]);
 for(const m of html.matchAll(/(?:src|href)="(\.\/[^"?]+)(?:\?[^"]*)?"/g))assert.ok(existsSync(resolve(root,m[1])),'missing local asset: '+m[1]);

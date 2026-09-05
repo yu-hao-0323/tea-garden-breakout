@@ -5,8 +5,10 @@
   "type": "module",
   "description": "Two personalized heroes in a landscape survival action game.",
   "scripts": {
-    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs",
-    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js"
+    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs && node tests/joystick.test.mjs",
+    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js && node --check dist/joystick.js"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }
