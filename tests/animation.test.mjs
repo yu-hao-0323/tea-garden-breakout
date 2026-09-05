@@ -2,10 +2,10 @@ import assert from 'node:assert/strict';
 import {Game} from '../dist/engine.js';
 import {poseFor,atlasCell,CLIPS} from '../dist/animation.js';
 for(const hero of ['qingfeng','lingye']){
- const g=new Game(hero,()=>.5),p=g.player;
+ const g=new Game(hero,()=>.5),p=g.player;g.spawnTimer=1000;
  const runFrames=new Set();for(let i=0;i<45;i++){g.update(1/60,{x:1,y:0});runFrames.add(poseFor(p,g.time,hero).frame);}
  for(const f of CLIPS.run)assert.ok(runFrames.has(f),'running must show four genuinely different poses');
- const e=g.spawnEnemy('heavy');e.x=p.x+100;e.y=p.y;g.attack();
+ const e=g.spawnEnemy('heavy');e.x=p.x+100;e.y=p.y;p.attackTimer=0;g.attack();
  const health=e.hp;assert.equal(p.action.name,'attack');assert.equal(poseFor(p,g.time,hero).frame,8);
  for(let i=0;i<5;i++)g.update(1/60);assert.equal(e.hp,health,'windup must not deal early damage');
  for(let i=0;i<14;i++)g.update(1/60);assert.ok(e.hp<health||g.bullets.length>0,'strike releases its damage/projectile');

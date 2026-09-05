@@ -11,7 +11,7 @@ const firstX=melee.player.x;melee.update(.05,{x:1,y:0});assert.ok(melee.player.x
 assert.equal(melee.useSkill('q'),false,'cooldown prevents repeat activation');
 
 const ranged=new Game('lingye',seed());ranged.player.hp=50;
-const target=enemyAt(ranged,300,0);ranged.attack();assert.equal(ranged.bullets.length,0,'projectile waits for the casting pose');
+const target=enemyAt(ranged,300,0);ranged.player.attackTimer=0;ranged.attack();assert.equal(ranged.bullets.length,0,'projectile waits for the casting pose');
 assert.equal(target.hp,target.maxHp,'ranged damage requires projectile travel');
 for(let i=0;i<40;i++)ranged.update(1/60);
 assert.ok(target.hp<target.maxHp,'projectile hits its target');

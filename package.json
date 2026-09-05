@@ -1,12 +1,12 @@
 {
   "name": "tea-garden-breakout",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "private": true,
   "type": "module",
   "description": "Two personalized heroes in a landscape survival action game.",
   "scripts": {
-    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs",
-    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js"
+    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs",
+    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js"
   },
   "engines": { "node": ">=22" }
 }
