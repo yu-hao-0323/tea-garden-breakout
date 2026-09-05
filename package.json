@@ -1,12 +1,12 @@
 {
   "name": "tea-garden-breakout",
-  "version": "1.2.0",
+  "version": "2.0.0",
   "private": true,
   "type": "module",
-  "description": "Two personalized heroes in a landscape survival action game.",
+  "description": "Personalized action roguelite with endless survival, branching campaign, loot and floating touch controls.",
   "scripts": {
-    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs && node tests/joystick.test.mjs",
-    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js && node --check dist/joystick.js"
+    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs && node tests/joystick.test.mjs && node tests/expedition.test.mjs",
+    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js && node --check dist/joystick.js && node --check dist/expedition.js && node --check dist/journey-view.js"
   },
   "engines": {
     "node": ">=22"

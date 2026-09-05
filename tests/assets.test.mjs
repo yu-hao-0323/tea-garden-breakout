@@ -4,10 +4,11 @@ import {resolve,dirname} from 'node:path';
 import {fileURLToPath} from 'node:url';
 const root=resolve(dirname(fileURLToPath(import.meta.url)),'../dist');
 const html=readFileSync(resolve(root,'play.html'),'utf8'),script=readFileSync(resolve(root,'game.js'),'utf8');
+for(const page of ['index.html','play.html']){const source=readFileSync(resolve(root,page),'utf8');for(const match of source.matchAll(/(?:src|href)="(\.\/[^"?]+)(?:\?[^"]*)?"/g))assert.ok(existsSync(resolve(root,match[1])),'missing route asset: '+match[1]);}
 const ids=[...html.matchAll(/\bid="([^"]+)"/g)].map(m=>m[1]);assert.equal(new Set(ids).size,ids.length,'HTML IDs must be unique');
 for(const m of script.matchAll(/\$\('([^']+)'\)/g))assert.ok(ids.includes(m[1]),'missing control: '+m[1]);
 for(const m of html.matchAll(/(?:src|href)="(\.\/[^"?]+)(?:\?[^"]*)?"/g))assert.ok(existsSync(resolve(root,m[1])),'missing local asset: '+m[1]);
-for(const name of ['qingfeng','lingye','garden','qingfeng-motion','lingye-motion','monsters']){
+for(const name of ['qingfeng','lingye','garden','qingfeng-motion','lingye-motion','monsters','realms','chest']){
  const p=resolve(root,`assets/${name}.png`);assert.ok(existsSync(p));const data=readFileSync(p);assert.equal(data.subarray(1,4).toString(),'PNG');
  if(name.endsWith('motion')){assert.equal(data.readUInt32BE(16),data.readUInt32BE(20),'square animation atlas');assert.ok(data.length>100000);}
 }

@@ -1,4 +1,4 @@
-import {ATTACK_MOTION,ATTACK_RELEASE,attackDuration} from './animation.js?v=creatures3';
+import {ATTACK_MOTION,ATTACK_RELEASE,attackDuration} from './animation.js?v=journey4';
 export const HEROES={
   qingfeng:{name:'青锋',role:'近战 · 机械采茶师',tag:'近身爆发',quote:'以锋为界，守住这一山新绿。',description:'机械臂与茶刃并用，切入敌群，在近身战斗中打开缺口。',hp:140,attack:28,speed:230,interval:.95,range:152,color:'#a3f7b9',passive:['茶刃横扫','挥斩前方敌人，命中时击退。','✧'],q:['回风斩','向移动方向突进，斩击沿途敌人。',5,'↯'],e:['万叶归刃','释放环形刃风，重创周围敌人。',12,'✺']},
   lingye:{name:'灵叶',role:'远程 · 御叶行者',tag:'远程控场',quote:'一叶听风，万物皆有回响。',description:'用灵叶追击暗影，以结界控制战场，灵巧走位让敌人无法近身。',hp:105,attack:19,speed:250,interval:.8,range:540,color:'#71f4dd',passive:['追风灵叶','自动发射飞叶，追击最近的敌人。','❧'],q:['叶影穿行','轻盈闪身，恢复 14 点生命。',6,'↯'],e:['青岚结界','生成 5 秒结界，减速并持续伤害敌人。',13,'❋']}
@@ -38,7 +38,8 @@ export class Game{
  ring(x,y,r,color,duration=.45){this.effects.push({kind:'ring',x,y,r,color,life:duration,maxLife:duration});}
  burst(x,y,color,count=8){for(let i=0;i<count;i++){const a=this.random()*Math.PI*2,s=35+this.random()*145;this.particles.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:.3+this.random()*.4,maxLife:.7,color,r:2+this.random()*3});}if(this.particles.length>300)this.particles.splice(0,this.particles.length-300);}
  text(x,y,label,color='#edffc2'){this.texts.push({x,y,label,color,life:.7});if(this.texts.length>55)this.texts.shift();}
- hit(e,damage,knock=0,origin=this.player){if(e.dead)return;e.hp-=damage;e.flash=.12;const a=Math.atan2(e.y-origin.y,e.x-origin.x);e.kx+=Math.cos(a)*knock;e.ky+=Math.sin(a)*knock;this.text(e.x,e.y-e.r-14,Math.round(damage).toString());this.burst(e.x,e.y,this.config.color,3);if(e.hp<=0){e.dead=true;this.kills++;this.burst(e.x,e.y,e.type==='boss'?'#f5c78a':'#94dac2',e.type==='boss'?35:9);this.drops.push({x:e.x,y:e.y,r:6,value:e.xp,kind:'xp',seed:this.random()*6});if(this.random()<.055)this.drops.push({x:e.x+12,y:e.y,r:9,value:17,kind:'heal',seed:0});if(e.type==='boss'){this.state='won';this.animate('victory',.9);this.emit('won');}else this.emit('kill');}}
+ hit(e,damage,knock=0,origin=this.player){if(e.dead)return;e.hp-=damage;e.flash=.12;const a=Math.atan2(e.y-origin.y,e.x-origin.x);e.kx+=Math.cos(a)*knock;e.ky+=Math.sin(a)*knock;this.text(e.x,e.y-e.r-14,Math.round(damage).toString());this.burst(e.x,e.y,this.config.color,3);if(e.hp<=0){e.dead=true;this.kills++;this.burst(e.x,e.y,e.type==='boss'?'#f5c78a':'#94dac2',e.type==='boss'?35:9);this.drops.push({x:e.x,y:e.y,r:6,value:e.xp,kind:'xp',seed:this.random()*6});if(this.random()<.055)this.drops.push({x:e.x+12,y:e.y,r:9,value:17,kind:'heal',seed:0});if(e.type==='boss'){this.defeatedBoss(e);}else this.emit('kill');}}
+ defeatedBoss(){this.state='won';this.animate('victory',.9);this.emit('won');}
  hurt(amount){const p=this.player;if(p.invincible>0||this.state!=='playing')return;p.hp=Math.max(0,p.hp-amount*p.armor);p.invincible=.7;this.animate('hurt',.24);this.ring(p.x,p.y,50,'#f69599',.28);this.text(p.x,p.y-85,'−'+Math.round(amount*p.armor),'#ff9e9e');this.emit('hurt');if(p.hp<=0){this.state='lost';this.animate('defeat',.65);this.pendingActions=[];this.emit('lost');}}
  heal(amount){const p=this.player,actual=Math.min(p.maxHp-p.hp,amount);p.hp=Math.min(p.maxHp,p.hp+amount);if(actual>0)this.text(p.x,p.y-88,'+'+Math.round(actual),'#a9ffd0');}
  useSkill(key){
@@ -72,17 +73,23 @@ export class Game{
   this.emit('attack');return true;
  }
  beginUpgrade(){if(this.state!=='playing'||this.xp<this.xpNeeded)return false;this.xp-=this.xpNeeded;this.level++;this.xpNeeded=Math.round(7+this.level*3.5);this.state='upgrade';const pool=[...PERKS];this.choices=[];for(let i=0;i<3;i++)this.choices.push(pool.splice(Math.floor(this.random()*pool.length),1)[0]);this.emit('upgrade');return true;}
- chooseUpgrade(id){if(this.state!=='upgrade'||!this.choices.some(v=>v.id===id))return false;const p=this.player;
+ chooseUpgrade(id){if(this.state!=='upgrade'||!this.choices.some(v=>v.id===id))return false;this.applyPerk(id);const p=this.player;
+  p.invincible=Math.max(p.invincible,1);this.choices=[];this.state='playing';this.emit('upgraded');this.beginUpgrade();return true;
+ }
+ applyPerk(id){const p=this.player;
   if(id==='power')p.attack*=1.22;
   if(id==='haste'){p.interval=Math.max(ATTACK_MOTION[this.hero].minInterval,p.interval/1.18);p.cdScale=Math.max(.35,p.cdScale*.9);}
   if(id==='vitality'){p.maxHp+=25;this.heal(40);}
   if(id==='stride'){p.speed=Math.min(440,p.speed*1.15);p.magnet*=1.25;}
   if(id==='mastery'){if(this.hero==='qingfeng')p.range=Math.min(310,p.range*1.2);else p.projectiles=Math.min(6,p.projectiles+1);}
   if(id==='ward'){p.armor=Math.max(.35,p.armor*.85);this.heal(20);}
-  p.invincible=Math.max(p.invincible,1);this.choices=[];this.state='playing';this.emit('upgraded');this.beginUpgrade();return true;
  }
  pause(){if(this.state==='playing'){this.state='paused';return true;}return false;}
  resume(){if(this.state==='paused'){this.state='playing';return true;}return false;}
+ scheduleSpawns(dt){
+  this.spawnTimer-=dt;if(this.time<90&&this.spawnTimer<=0){this.spawnTimer=Math.max(.3,1.2-this.time*.01);if(this.enemies.length<78){this.spawnEnemy();if(this.time>38&&this.random()<.35)this.spawnEnemy();}}
+  if(this.time>=75&&!this.bossSpawned)this.spawnEnemy('boss');
+ }
  update(dt,input={x:0,y:0}){
   dt=clamp(dt,0,.05);if(['won','lost'].includes(this.state)){this.tickAnimation(dt);return;}if(this.state!=='playing')return;this.tickAnimation(dt);this.time+=dt;const p=this.player;this.wave=1+Math.floor(Math.min(this.time,74)/20);
   p.qCD=Math.max(0,p.qCD-dt);p.eCD=Math.max(0,p.eCD-dt);p.invincible=Math.max(0,p.invincible-dt);p.attackTimer-=dt;
@@ -93,12 +100,11 @@ export class Game{
   p.x=clamp(p.x,WORLD.pad,WORLD.w-WORLD.pad);p.y=clamp(p.y,WORLD.pad,WORLD.h-WORLD.pad);
   const ready=[];for(const action of this.pendingActions){action.delay-=dt;if(action.delay<=0)ready.push(action);}this.pendingActions=this.pendingActions.filter(a=>a.delay>0);for(const action of ready){if(this.state!=='playing')break;if(action.kind==='attack')this.releaseAttack(action);else this.releaseUltimate();}
   if(p.attackTimer<=0&&!this.attack())p.attackTimer=.04;
-  this.spawnTimer-=dt;if(this.time<90&&this.spawnTimer<=0){this.spawnTimer=Math.max(.3,1.2-this.time*.01);if(this.enemies.length<78){this.spawnEnemy();if(this.time>38&&this.random()<.35)this.spawnEnemy();}}
-  if(this.time>=75&&!this.bossSpawned)this.spawnEnemy('boss');
+  this.scheduleSpawns(dt);
   for(const f of this.fields){f.life-=dt;f.tick-=dt;if(f.tick<=0){f.tick=.45;for(const e of this.enemies)if(!e.dead&&distance(f,e)<f.r)this.hit(e,p.attack*.8,0,f);}}
   this.fields=this.fields.filter(f=>f.life>0);
   for(const e of this.enemies){
-   if(e.dead)continue;let dx=p.x-e.x,dy=p.y-e.y,dist=hypot(dx,dy)||1;e.angle=Math.atan2(dy,dx);e.flash=Math.max(0,e.flash-dt);let slow=1;for(const f of this.fields)if(distance(f,e)<f.r)slow=.35;
+   if(e.dead)continue;let dx=p.x-e.x,dy=p.y-e.y,dist=hypot(dx,dy)||1;e.angle=Math.atan2(dy,dx);e.flash=Math.max(0,e.flash-dt);e.slow=Math.max(0,(e.slow||0)-dt);let slow=e.slow>0?.5:1;for(const f of this.fields)if(distance(f,e)<f.r)slow=.35;
    if(e.type==='boss'){
     e.fire-=dt;e.chargeTimer-=dt;
     if(e.fire<=0){e.fire=2.7;for(let i=0;i<12;i++){const a=i/12*Math.PI*2+this.time*.15;this.bullets.push({x:e.x,y:e.y,vx:Math.cos(a)*170,vy:Math.sin(a)*170,r:9,damage:14,life:5,enemy:true,angle:a});}this.ring(e.x,e.y,90,'#e792b7',.4);}
@@ -115,7 +121,7 @@ export class Game{
    b.life-=dt;b.x+=b.vx*dt;b.y+=b.vy*dt;
    if(b.enemy){if(distance(b,p)<b.r+p.r){this.hurt(b.damage);b.life=0;}}
    else{if(b.targetId){const target=this.enemies.find(e=>e.id===b.targetId&&!e.dead);if(target){const a=Math.atan2(target.y-b.y,target.x-b.x);b.vx+=(Math.cos(a)*520-b.vx)*dt*3;b.vy+=(Math.sin(a)*520-b.vy)*dt*3;b.angle=Math.atan2(b.vy,b.vx);}}
-    for(const e of this.enemies){if(!e.dead&&distance(b,e)<b.r+e.r){this.hit(e,b.damage,30,b);b.life=0;break;}}
+    for(const e of this.enemies){if(!e.dead&&!b.hits?.has(e.id)&&distance(b,e)<b.r+e.r){this.hit(e,b.damage,30,b);if(b.slow)e.slow=b.slow;if(b.pierce>0){(b.hits??=new Set()).add(e.id);b.pierce--;}else b.life=0;break;}}
    }
   }
   this.bullets=this.bullets.filter(b=>b.life>0);this.enemies=this.enemies.filter(e=>!e.dead);
