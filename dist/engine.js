@@ -1,10 +1,11 @@
+import {ATTACK_MOTION,ATTACK_RELEASE,attackDuration} from './animation.js?v=creatures3';
 export const HEROES={
-  qingfeng:{name:'青锋',role:'近战 · 机械采茶师',tag:'近身爆发',quote:'以锋为界，守住这一山新绿。',description:'机械臂与茶刃并用，切入敌群，在近身战斗中打开缺口。',hp:140,attack:28,speed:230,interval:.7,range:152,color:'#a3f7b9',passive:['茶刃横扫','挥斩前方敌人，命中时击退。','✧'],q:['回风斩','向移动方向突进，斩击沿途敌人。',5,'↯'],e:['万叶归刃','释放环形刃风，重创周围敌人。',12,'✺']},
-  lingye:{name:'灵叶',role:'远程 · 御叶行者',tag:'远程控场',quote:'一叶听风，万物皆有回响。',description:'用灵叶追击暗影，以结界控制战场，灵巧走位让敌人无法近身。',hp:105,attack:19,speed:250,interval:.5,range:540,color:'#71f4dd',passive:['追风灵叶','自动发射飞叶，追击最近的敌人。','❧'],q:['叶影穿行','轻盈闪身，恢复 14 点生命。',6,'↯'],e:['青岚结界','生成 5 秒结界，减速并持续伤害敌人。',13,'❋']}
+  qingfeng:{name:'青锋',role:'近战 · 机械采茶师',tag:'近身爆发',quote:'以锋为界，守住这一山新绿。',description:'机械臂与茶刃并用，切入敌群，在近身战斗中打开缺口。',hp:140,attack:28,speed:230,interval:.95,range:152,color:'#a3f7b9',passive:['茶刃横扫','挥斩前方敌人，命中时击退。','✧'],q:['回风斩','向移动方向突进，斩击沿途敌人。',5,'↯'],e:['万叶归刃','释放环形刃风，重创周围敌人。',12,'✺']},
+  lingye:{name:'灵叶',role:'远程 · 御叶行者',tag:'远程控场',quote:'一叶听风，万物皆有回响。',description:'用灵叶追击暗影，以结界控制战场，灵巧走位让敌人无法近身。',hp:105,attack:19,speed:250,interval:.8,range:540,color:'#71f4dd',passive:['追风灵叶','自动发射飞叶，追击最近的敌人。','❧'],q:['叶影穿行','轻盈闪身，恢复 14 点生命。',6,'↯'],e:['青岚结界','生成 5 秒结界，减速并持续伤害敌人。',13,'❋']}
 };
 export const PERKS=[
  {id:'power',name:'锋芒初露',icon:'✧',desc:'所有伤害提升 22%。',type:'攻击强化'},
- {id:'haste',name:'疾风心法',icon:'↯',desc:'普攻速度提升 18%，技能冷却缩短 10%。',type:'速度强化'},
+ {id:'haste',name:'疾风心法',icon:'↯',desc:'普攻速度提升 18%（有上限），技能冷却缩短 10%。',type:'速度强化'},
  {id:'vitality',name:'生生不息',icon:'♡',desc:'最大生命增加 25，立即恢复 40 点生命。',type:'生存强化'},
  {id:'stride',name:'踏叶无痕',icon:'➶',desc:'移动速度提升 15%，拾取范围增加 25%。',type:'机动强化'},
  {id:'mastery',name:'万象归一',icon:'❋',desc:'青锋斩击范围扩大 20%；灵叶额外发射一枚飞叶。',type:'专属强化'},
@@ -21,7 +22,7 @@ export class Game{
   this.player={x:900,y:610,r:20,hp:this.config.hp,maxHp:this.config.hp,attack:this.config.attack,speed:this.config.speed,interval:this.config.interval,range:this.config.range,attackTimer:.3,qCD:0,eCD:0,cdScale:1,armor:1,invincible:1.3,angle:-Math.PI/2,facing:1,moving:false,magnet:92,projectiles:1,regen:0,dash:0,dashX:0,dashY:0,action:null,stride:0,moveBlend:0,step:0};
   this.pendingActions=[];this.trails=[];
  }
- animate(name,duration,angle=this.player.angle){const p=this.player;p.action={name,duration,elapsed:0,facing:Math.cos(angle)<-.05?-1:Math.cos(angle)>.05?1:p.facing};}
+ animate(name,duration,angle=this.player.angle){const p=this.player;if(name!=='attack')this.pendingActions=this.pendingActions.filter(a=>a.kind!=='attack');p.action={name,duration,elapsed:0,facing:Math.cos(angle)<-.05?-1:Math.cos(angle)>.05?1:p.facing};}
  tickAnimation(dt){const p=this.player;if(p.action){p.action.elapsed+=dt;if(p.action.elapsed>=p.action.duration&&!['defeat','victory'].includes(p.action.name))p.action=null;}p.moveBlend+=(Number(p.moving)-p.moveBlend)*Math.min(1,dt*13);if(p.moving)p.stride+=dt*10.5*(p.speed/230);for(const t of this.trails)t.life-=dt;this.trails=this.trails.filter(t=>t.life>0);}
  emit(type,data={}){this.events.push({type,...data});}
  takeEvents(){return this.events.splice(0);}
@@ -54,10 +55,11 @@ export class Game{
  }
  releaseUltimate(){const p=this.player;if(this.hero==='qingfeng'){const radius=275*(p.range/this.config.range);for(const e of this.enemies)if(!e.dead&&distance(p,e)<radius+e.r)this.hit(e,p.attack*3.8,360);this.ring(p.x,p.y,radius,'#d4f7a2',.85);this.effects.push({kind:'nova',x:p.x,y:p.y,r:radius,color:'#b3f5af',life:.8,maxLife:.8});}else{this.fields.push({x:p.x,y:p.y,r:235,life:5,tick:.01});this.ring(p.x,p.y,235,'#6bf4db',.7);}this.emit('impact',{kind:'ultimate'});}
  attack(){
-  const p=this.player;if(p.action&&['dash','ultimate','hurt'].includes(p.action.name))return false;let target=null,nearest=p.range;
+  const p=this.player;if(this.state!=='playing'||p.action||p.attackTimer>0)return false;let target=null,nearest=p.range;
   for(const e of this.enemies){if(e.dead)continue;const d=distance(p,e);if(d<nearest){nearest=d;target=e;}}
-  if(!target)return false;const angle=Math.atan2(target.y-p.y,target.x-p.x);p.facing=target.x<p.x?-1:1;
-  const duration=Math.min(.32,p.interval*.85);this.animate('attack',duration,angle);this.pendingActions.push({kind:'attack',delay:duration*.5,angle,targetId:target.id});return true;
+  if(!target)return false;const angle=Math.atan2(target.y-p.y,target.x-p.x);
+  if(Math.abs(target.x-p.x)>18)p.facing=target.x<p.x?-1:1;
+  const duration=attackDuration(this.hero,p.interval);this.animate('attack',duration,angle);p.action.facing=p.facing;p.attackTimer=Math.max(p.interval,ATTACK_MOTION[this.hero].minInterval);this.pendingActions.push({kind:'attack',delay:duration*ATTACK_RELEASE,angle,targetId:target.id});return true;
  }
  releaseAttack(action){
   const p=this.player,angle=action.angle;
@@ -72,7 +74,7 @@ export class Game{
  beginUpgrade(){if(this.state!=='playing'||this.xp<this.xpNeeded)return false;this.xp-=this.xpNeeded;this.level++;this.xpNeeded=Math.round(7+this.level*3.5);this.state='upgrade';const pool=[...PERKS];this.choices=[];for(let i=0;i<3;i++)this.choices.push(pool.splice(Math.floor(this.random()*pool.length),1)[0]);this.emit('upgrade');return true;}
  chooseUpgrade(id){if(this.state!=='upgrade'||!this.choices.some(v=>v.id===id))return false;const p=this.player;
   if(id==='power')p.attack*=1.22;
-  if(id==='haste'){p.interval=Math.max(.15,p.interval/1.18);p.cdScale=Math.max(.35,p.cdScale*.9);}
+  if(id==='haste'){p.interval=Math.max(ATTACK_MOTION[this.hero].minInterval,p.interval/1.18);p.cdScale=Math.max(.35,p.cdScale*.9);}
   if(id==='vitality'){p.maxHp+=25;this.heal(40);}
   if(id==='stride'){p.speed=Math.min(440,p.speed*1.15);p.magnet*=1.25;}
   if(id==='mastery'){if(this.hero==='qingfeng')p.range=Math.min(310,p.range*1.2);else p.projectiles=Math.min(6,p.projectiles+1);}
@@ -90,7 +92,7 @@ export class Game{
   else{p.x+=mx*p.speed*dt;p.y+=my*p.speed*dt;}
   p.x=clamp(p.x,WORLD.pad,WORLD.w-WORLD.pad);p.y=clamp(p.y,WORLD.pad,WORLD.h-WORLD.pad);
   const ready=[];for(const action of this.pendingActions){action.delay-=dt;if(action.delay<=0)ready.push(action);}this.pendingActions=this.pendingActions.filter(a=>a.delay>0);for(const action of ready){if(this.state!=='playing')break;if(action.kind==='attack')this.releaseAttack(action);else this.releaseUltimate();}
-  if(p.attackTimer<=0){p.attackTimer=this.attack()?p.interval:.08;}
+  if(p.attackTimer<=0&&!this.attack())p.attackTimer=.04;
   this.spawnTimer-=dt;if(this.time<90&&this.spawnTimer<=0){this.spawnTimer=Math.max(.3,1.2-this.time*.01);if(this.enemies.length<78){this.spawnEnemy();if(this.time>38&&this.random()<.35)this.spawnEnemy();}}
   if(this.time>=75&&!this.bossSpawned)this.spawnEnemy('boss');
   for(const f of this.fields){f.life-=dt;f.tick-=dt;if(f.tick<=0){f.tick=.45;for(const e of this.enemies)if(!e.dead&&distance(f,e)<f.r)this.hit(e,p.attack*.8,0,f);}}

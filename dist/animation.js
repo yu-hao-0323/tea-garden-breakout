@@ -1,5 +1,9 @@
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 export const CLIPS={idle:[0,1,2,3,2,1],run:[4,5,6,7],attack:[8,9,10,11],ultimate:[12,13,14,15]};
+export const ATTACK_RELEASE=.42;
+export const ATTACK_MOTION={qingfeng:{duration:.62,minInterval:.64},lingye:{duration:.54,minInterval:.60}};
+export function attackDuration(hero,interval){return Math.min(ATTACK_MOTION[hero].duration,Math.max(interval,ATTACK_MOTION[hero].minInterval)-.12);}
+const smooth=t=>{t=clamp(t,0,1);return t*t*(3-2*t);};
 export function poseFor(player,time,hero){
  const action=player.action,pose={frame:0,flip:player.facing||1,x:0,y:0,rotation:0,scaleX:1,scaleY:1,alpha:1,glow:0};
  const stride=player.stride||0,move=player.moveBlend||0;
@@ -8,9 +12,11 @@ export function poseFor(player,time,hero){
  if(!action)return pose;
  const t=clamp(action.elapsed/action.duration,0,1);pose.flip=action.facing;
  if(action.name==='attack'){
-  pose.frame=CLIPS.attack[Math.min(3,Math.floor(t*4))];
-  const strike=Math.sin(clamp((t-.2)/.65,0,1)*Math.PI);
-  pose.x=strike*(hero==='qingfeng'?9:3)*pose.flip;pose.y-=strike*2;
+  // Hold the anticipation and recovery; only the strike should be quick.
+  // Suppress the running bounce while the upper-body action is playing.
+  pose.frame=t<.22?8:t<ATTACK_RELEASE?9:t<.65?10:t<.86?11:0;
+  const strike=t<ATTACK_RELEASE?smooth((t-.22)/.2):1-smooth((t-.58)/.42);
+  pose.x=strike*(hero==='qingfeng'?5:2)*pose.flip;pose.y=-strike;
  }else if(action.name==='ultimate'){
   pose.frame=CLIPS.ultimate[Math.min(3,Math.floor(t*4))];pose.y-=Math.sin(t*Math.PI)*(hero==='lingye'?13:4);pose.glow=Math.sin(t*Math.PI);
  }else if(action.name==='dash'){
