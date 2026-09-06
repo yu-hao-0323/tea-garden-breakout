@@ -40,6 +40,16 @@ const worker = {
       }, allowedWidths);
     }
 
+    const origin=request.headers.get('origin');
+    const pagesOrigin='https://yu-hao-0323.github.io';
+    if(url.pathname.startsWith('/api/')&&origin===pagesOrigin){
+      const headers={'Access-Control-Allow-Origin':pagesOrigin,'Access-Control-Allow-Methods':'GET, POST, OPTIONS','Access-Control-Allow-Headers':'Content-Type, Authorization','Vary':'Origin'};
+      if(request.method==='OPTIONS')return new Response(null,{status:204,headers});
+      const response=await handler.fetch(request,env,ctx);
+      const result=new Response(response.body,response);
+      for(const [key,value] of Object.entries(headers))result.headers.set(key,value);
+      return result;
+    }
     return handler.fetch(request, env, ctx);
   },
 };

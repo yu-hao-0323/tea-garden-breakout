@@ -1,11 +1,11 @@
 import {rawDb} from '../../../db/raw';
 import {newGame} from '../../../lib/game';
 import {digest,equal,hashPassword,normalizeName,normalizeRecovery,recoveryCode,validName,verifyPassword} from '../../../lib/credentials';
-import {body,cleanup,cookieHeader,errorResponse,gameState,json,newSession,now,rateLimit,requireOrigin,session,RequestError,COOKIE} from '../../../lib/server';
+import {body,cleanup,cookieHeader,errorResponse,gameState,json,newSession,now,rateLimit,requireOrigin,session,RequestError,COOKIE,requestToken,PAGES_ORIGIN} from '../../../lib/server';
 export async function GET(request:Request){try{const user=await session(request);if(!user)return json({user:null});return json({user,...await gameState(user.id)});}catch(error){return errorResponse(error);}}
 export async function POST(request:Request){try{
  requireOrigin(request);const data=await body(request),type=String(data.type||'');
- if(type==='logout'){const token=request.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);if(token)await rawDb().prepare('DELETE FROM sessions WHERE token_hash=?').bind(await digest(token)).run();return json({ok:true},200,cookieHeader('',true));}
+ if(type==='logout'){const token=requestToken(request);if(token)await rawDb().prepare('DELETE FROM sessions WHERE token_hash=?').bind(await digest(token)).run();return json({ok:true},200,cookieHeader('',true));}
  if(!['register','login','recover'].includes(type))throw new RequestError('请选择登录方式。');
  const name=typeof data.name==='string'?data.name.normalize('NFKC').trim():'',username=normalizeName(name),password=typeof data.password==='string'?data.password:'';
  if(!validName(name))throw new RequestError('名字需要 2–20 个字，可用中文、字母、数字、下划线。');
@@ -37,5 +37,5 @@ export async function POST(request:Request){try{
   }
  }
  await cleanup().catch(()=>console.warn("Expired session cleanup deferred"));
- return json({user,...await gameState(user.id),...(recovery?{recovery}: {})},200,cookieHeader(authSession.token));
+ return json({user,...await gameState(user.id),...(recovery?{recovery}: {}),...(request.headers.get('origin')===PAGES_ORIGIN?{sessionToken:authSession.token}:{})},200,cookieHeader(authSession.token));
  }catch(error){return errorResponse(error);}}

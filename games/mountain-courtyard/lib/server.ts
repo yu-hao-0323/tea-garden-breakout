@@ -2,18 +2,20 @@ import {rawDb} from '../db/raw';
 import {digest,secret} from './credentials';
 import {advance,applyAction,type Save} from './game';
 export class RequestError extends Error{constructor(message:string,public status=400){super(message);}}
+export const PAGES_ORIGIN='https://yu-hao-0323.github.io';
+export function requestToken(request:Request){const auth=request.headers.get('authorization');if(auth?.startsWith('Bearer '))return auth.slice(7);return request.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);}
 export const COOKIE='__Host-courtyard-session';
 export const now=()=>Date.now();
 export function json(data:unknown,status=200,cookie?:string){return Response.json(data,{status,headers:{'Cache-Control':'no-store','X-Content-Type-Options':'nosniff',...(cookie?{'Set-Cookie':cookie}:{})}});}
 export function cookieHeader(token:string,clear=false){return `${COOKIE}=${token}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${clear?0:30*86400}`;}
 export function requireOrigin(request:Request){
  const origin=request.headers.get('origin');
- if(!origin||origin!==new URL(request.url).origin)throw new RequestError('请求来源不正确，请重新打开游戏。',403);
+ if(!origin||(origin!==new URL(request.url).origin&&origin!==PAGES_ORIGIN))throw new RequestError('请求来源不正确，请重新打开游戏。',403);
  if(!request.headers.get('content-type')?.includes('application/json'))throw new RequestError('请求格式不正确。',415);
 }
 export async function body(request:Request){if(Number(request.headers.get('content-length'))>8192)throw new RequestError('这次请求太大了。',413);const text=await request.text();if(text.length>8192)throw new RequestError('这次请求太大了。',413);try{return JSON.parse(text) as Record<string,unknown>;}catch{throw new RequestError('请求格式不正确。');}}
 export async function session(request:Request){
- const token=request.headers.get('cookie')?.split(';').map(s=>s.trim()).find(s=>s.startsWith(COOKIE+'='))?.slice(COOKIE.length+1);
+ const token=requestToken(request);
  if(!token||!/^[a-f0-9]{64}$/.test(token))return null;
  return await rawDb().prepare('SELECT a.id,a.name FROM sessions s JOIN accounts a ON a.id=s.user_id WHERE s.token_hash=? AND s.expires_at>?').bind(await digest(token),now()).first<{id:string;name:string}>();
 }

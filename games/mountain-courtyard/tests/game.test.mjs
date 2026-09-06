@@ -48,3 +48,10 @@ test('plant → harvest → cook → serve; offline cap and no mutation on error
  s.tier=3;s.roomAt=s.springAt=s.lastAt=t; s=model.advance(s,t+48*3600000);assert.equal(s.offline.seconds,8*3600);assert.ok(s.serviceBank<=3000);
  const bank=s.serviceBank;s=model.advance(s,t+48*3600000);assert.equal(s.serviceBank,bank);
 });
+test('GitHub Pages signs in with a revocable bearer token, without third-party cookies',async()=>{
+ const user=await call(auth,{type:'register',name:'网页店主',password:'pagespassword'},'','https://yu-hao-0323.github.io');
+ assert.equal(user.status,200);assert.match(user.data.sessionToken,/^[a-f0-9]{64}$/);
+ const req=new Request(origin+'/api/game',{headers:{Authorization:'Bearer '+user.data.sessionToken,Origin:'https://yu-hao-0323.github.io'}});
+ const response=await game.GET(req);assert.equal(response.status,200);assert.equal((await response.json()).user.name,'网页店主');
+ assert.equal((await call(auth,{type:'login',name:'网页店主',password:'pagespassword'},'','https://evil.example')).status,403);
+});
