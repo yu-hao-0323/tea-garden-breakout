@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Personalized action roguelite with endless survival, branching campaign, loot and floating touch controls.",
   "scripts": {
-    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs && node tests/joystick.test.mjs && node tests/expedition.test.mjs",
-    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js && node --check dist/joystick.js && node --check dist/expedition.js && node --check dist/journey-view.js"
+    "test": "node tests/engine.test.mjs && node tests/animation.test.mjs && node tests/combat-motion.test.mjs && node tests/orientation.test.mjs && node tests/assets.test.mjs && node tests/joystick.test.mjs && node tests/expedition.test.mjs && node tests/wordquest.test.mjs",
+    "check": "node --check dist/game.js && node --check dist/engine.js && node --check dist/animation.js && node --check dist/orientation.js && node --check dist/monsters.js && node --check dist/joystick.js && node --check dist/expedition.js && node --check dist/journey-view.js && node --check dist/wordquest/app.js && node --check dist/wordquest/core.js && node --check dist/wordquest/words.js"
   },
   "engines": {
     "node": ">=22"
